@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Draft 3 — Deck Picker</title>
+  <style>
+    /* Style simple et lisible */
+    :root{--bg:#f7fafc;--card:#ffffff;--accent:#2563eb;--ok:#10b981;--danger:#ef4444}
+    html,body{height:100%;}
+    body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; background:var(--bg); color:#0f172a; padding:2rem}
+    .container{max-width:900px;margin:0 auto}
+    h1{text-align:center;margin:0 0 .25rem}
+    .helper{color:#475569;text-align:center;margin-bottom:1rem}
+
+    .deck-list{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin-bottom:1rem}
+    .card{background:var(--card);padding:.45rem .65rem;border-radius:8px;box-shadow:0 6px 18px rgba(2,6,23,0.06);border:1px solid rgba(2,6,23,0.04);font-size:.95rem}
+
+    .controls{display:flex;gap:.6rem;justify-content:center}
+    .button{background:var(--accent);color:white;border:none;padding:.6rem .9rem;border-radius:10px;cursor:pointer;font-weight:600}
+    .button:active{transform:translateY(1px)}
+    .button.secondary{background:var(--ok)}
+    .button.tertiary{background:var(--danger)}
+
+    .results{display:flex;gap:1rem;justify-content:center;margin-top:1.25rem;flex-wrap:wrap}
+    .result-card{background:linear-gradient(180deg,var(--card) 0%,#f8fafc 100%);padding:1rem;border-radius:12px;min-width:180px;box-shadow:0 8px 24px rgba(2,6,23,0.06);border:1px solid rgba(2,6,23,0.04);text-align:center}
+    .result-card h3{margin:.2rem 0 .6rem}
+    .muted{color:#475569;font-size:.9rem}
+
+    footer{margin-top:2rem;text-align:center;color:#94a3b8;font-size:.9rem}
+
+    @media (max-width:520px){.result-card{min-width:140px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Draft 3 — Deck Picker</h1>
+    <p class="helper">Deck codé en dur pour l'instant. Clique sur <strong>Draft 3</strong> pour tirer 3 éléments au hasard (sans doublon).</p>
+
+    <!-- Affiche le deck (lecture seule pour l'instant) -->
+    <div id="deck" class="deck-list" aria-live="polite"></div>
+
+    <div class="controls">
+      <button id="draftBtn" class="button">Draft 3</button>
+      <button id="shuffleBtn" class="button secondary">Shuffle &amp; show deck</button>
+      <button id="clearBtn" class="button tertiary">Clear results</button>
+    </div>
+
+    <!-- Zone des résultats -->
+    <div id="results" class="results" aria-live="polite"></div>
+
+    <footer>Astuce : modifie le tableau <code>const deck = [...]</code> dans le script pour changer les cartes.</footer>
+  </div>
+
+<script>
+const deck = [
+  { name: "American", color: "#1f77b4", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/American.png" },
+  { name: "Arabian", color: "#9467bd", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Arabian.png" },
+  { name: "Aztec", color: "#2ca02c", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Aztec.png" },
+  { name: "Babylonian", color: "#ff7f0e", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Babylonian.png" },
+  { name: "Byzantine", color: "#8c564b", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Byzantine.png" },
+  { name: "Carthaginian", color: "#e377c2", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Carthaginian.png" },
+  { name: "Celtic", color: "#bcbd22", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Celtic.png" },
+  { name: "Chinese", color: "#17becf", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Chinese.png" },
+  { name: "Dutch", color: "#ff6600", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Dutch.png" },
+  { name: "Egyptian", color: "#ffd700", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Egyptian.png" },
+  { name: "English", color: "#d62728", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/English.png" },
+  { name: "Ethiopian", color: "#228b22", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Ethiopian.png" },
+  { name: "French", color: "#0055a4", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/French.png" },
+  { name: "German", color: "#000000", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/German.png" },
+  { name: "Greek", color: "#4169e1", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Greek.png" },
+  { name: "Holy Roman", color: "#708090", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Holy_Roman.png" },
+  { name: "Incan", color: "#cd853f", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Incan.png" },
+  { name: "Indian", color: "#ff9933", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Indian.png" },
+  { name: "Japanese", color: "#dc143c", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Japanese.png" },
+  { name: "Khmer", color: "#800080", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Khmer.png" },
+  { name: "Korean", color: "#4169e1", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Korean.png" },
+  { name: "Malinese", color: "#daa520", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Malinese.png" },
+  { name: "Mayan", color: "#20b2aa", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Mayan.png" },
+  { name: "Mongolian", color: "#a52a2a", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Mongolian.png" },
+  { name: "Native American", color: "#deb887", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Native_American.png" },
+  { name: "Ottoman", color: "#556b2f", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Ottoman.png" },
+  { name: "Persian", color: "#c71585", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Persian.png" },
+  { name: "Portuguese", color: "#006400", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Portuguese.png" },
+  { name: "Roman", color: "#800000", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Roman.png" },
+  { name: "Russian", color: "#00008b", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Russian.png" },
+  { name: "Spanish", color: "#ff0000", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Spanish.png" },
+  { name: "Sumerian", color: "#708238", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Sumerian.png" },
+  { name: "Viking", color: "#4682b4", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Viking.png" },
+  { name: "Zulu", color: "#2e8b57", img: "https://raw.githubusercontent.com/Ehless/Draft_Civ/main/Images/Zulu.png" }
+];
+
+
+    // éléments DOM
+    const deckEl = document.getElementById('deck');
+    const resultsEl = document.getElementById('results');
+    const draftBtn = document.getElementById('draftBtn');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    // affiche le deck (ordre actuel)
+	function renderDeck(list = deck){
+  deckEl.innerHTML = '';
+  list.forEach((civ, i) => {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.style.backgroundColor = civ.color; // couleur
+    el.innerHTML = `
+      <img src="${civ.img}" alt="${civ.name}" style="width:24px;height:24px;vertical-align:middle;margin-right:6px;">
+      <strong>${civ.name}</strong>
+    `;
+    deckEl.appendChild(el);
+  });
+}
+
+    renderDeck();
+
+    // Fisher-Yates shuffle (immutably)
+    function shuffleArray(arr){
+      const a = arr.slice();
+      for(let i = a.length - 1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    // Draft n éléments (sans doublons)
+function draft(n = 3){
+  resultsEl.innerHTML = '';
+  if(deck.length === 0){
+    resultsEl.textContent = 'Le deck est vide.';
+    return;
+  }
+  const shuffled = shuffleArray(deck);
+  const pick = shuffled.slice(0, Math.min(n, shuffled.length));
+
+  pick.forEach((civ) => {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.style.backgroundColor = civ.color;
+    card.innerHTML = `
+      <img src="${civ.img}" alt="${civ.name}" style="width:48px;height:48px;display:block;margin:0 auto 8px;">
+      <h3>${civ.name}</h3>
+    `;
+    resultsEl.appendChild(card);
+  });
+
+  resultsEl.setAttribute('aria-label', `Civilisations tirées : ${pick.map(c=>c.name).join(', ')}`);
+}
+
+    // boutons
+    draftBtn.addEventListener('click', () => draft(3));
+
+    // réaffiche le deck dans un ordre aléatoire (utile pour tester)
+    shuffleBtn.addEventListener('click', () => {
+      const shuffled = shuffleArray(deck);
+      renderDeck(shuffled);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      resultsEl.innerHTML = '';
+      resultsEl.removeAttribute('aria-label');
+    });
+  </script>
+</body>
+</html>
