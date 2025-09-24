@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Draft 3 — Deck Picker</title>
+  <style>
+    /* Style simple et lisible */
+    :root{--bg:#f7fafc;--card:#ffffff;--accent:#2563eb;--ok:#10b981;--danger:#ef4444}
+    html,body{height:100%;}
+    body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; background:var(--bg); color:#0f172a; padding:2rem}
+    .container{max-width:900px;margin:0 auto}
+    h1{text-align:center;margin:0 0 .25rem}
+    .helper{color:#475569;text-align:center;margin-bottom:1rem}
+
+    .deck-list{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin-bottom:1rem}
+    .card{background:var(--card);padding:.45rem .65rem;border-radius:8px;box-shadow:0 6px 18px rgba(2,6,23,0.06);border:1px solid rgba(2,6,23,0.04);font-size:.95rem}
+
+    .controls{display:flex;gap:.6rem;justify-content:center}
+    .button{background:var(--accent);color:white;border:none;padding:.6rem .9rem;border-radius:10px;cursor:pointer;font-weight:600}
+    .button:active{transform:translateY(1px)}
+    .button.secondary{background:var(--ok)}
+    .button.tertiary{background:var(--danger)}
+
+    .results{display:flex;gap:1rem;justify-content:center;margin-top:1.25rem;flex-wrap:wrap}
+    .result-card{background:linear-gradient(180deg,var(--card) 0%,#f8fafc 100%);padding:1rem;border-radius:12px;min-width:180px;box-shadow:0 8px 24px rgba(2,6,23,0.06);border:1px solid rgba(2,6,23,0.04);text-align:center}
+    .result-card h3{margin:.2rem 0 .6rem}
+    .muted{color:#475569;font-size:.9rem}
+
+    footer{margin-top:2rem;text-align:center;color:#94a3b8;font-size:.9rem}
+
+    @media (max-width:520px){.result-card{min-width:140px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Draft 3 — Deck Picker</h1>
+    <p class="helper">Deck codé en dur pour l'instant. Clique sur <strong>Draft 3</strong> pour tirer 3 éléments au hasard (sans doublon).</p>
+
+    <!-- Affiche le deck (lecture seule pour l'instant) -->
+    <div id="deck" class="deck-list" aria-live="polite"></div>
+
+    <div class="controls">
+      <button id="draftBtn" class="button">Draft 3</button>
+      <button id="shuffleBtn" class="button secondary">Shuffle &amp; show deck</button>
+      <button id="clearBtn" class="button tertiary">Clear results</button>
+    </div>
+
+    <!-- Zone des résultats -->
+    <div id="results" class="results" aria-live="polite"></div>
+
+    <footer>Astuce : modifie le tableau <code>const deck = [...]</code> dans le script pour changer les cartes.</footer>
+  </div>
+
+<script>
+const deck = [
+  { name: "American", color: "#1f77b4", img: "images/american.png" },
+  { name: "Arabian", color: "#9467bd", img: "images/arabian.png" },
+  { name: "Aztec", color: "#2ca02c", img: "images/aztec.png" },
+  { name: "Babylonian", color: "#ff7f0e", img: "images/babylonian.png" },
+  { name: "Byzantine", color: "#8c564b", img: "images/byzantine.png" },
+  { name: "Carthaginian", color: "#e377c2", img: "images/carthaginian.png" },
+  { name: "Celtic", color: "#bcbd22", img: "images/celtic.png" },
+  { name: "Chinese", color: "#17becf", img: "images/chinese.png" },
+  { name: "Dutch", color: "#ff6600", img: "images/dutch.png" },
+  { name: "Egyptian", color: "#ffd700", img: "images/egyptian.png" },
+  { name: "English", color: "#d62728", img: "images/english.png" },
+  { name: "Ethiopian", color: "#228b22", img: "images/ethiopian.png" },
+  { name: "French", color: "#0055a4", img: "images/french.png" },
+  { name: "German", color: "#000000", img: "images/german.png" },
+  { name: "Greek", color: "#4169e1", img: "images/greek.png" },
+  { name: "Holy Roman", color: "#708090", img: "images/holy_roman.png" },
+  { name: "Incan", color: "#cd853f", img: "images/incan.png" },
+  { name: "Indian", color: "#ff9933", img: "images/indian.png" },
+  { name: "Japanese", color: "#dc143c", img: "images/japanese.png" },
+  { name: "Khmer", color: "#800080", img: "images/khmer.png" },
+  { name: "Korean", color: "#4169e1", img: "images/korean.png" },
+  { name: "Malinese", color: "#daa520", img: "images/malinese.png" },
+  { name: "Mayan", color: "#20b2aa", img: "images/mayan.png" },
+  { name: "Mongolian", color: "#a52a2a", img: "images/mongolian.png" },
+  { name: "Native American", color: "#deb887", img: "images/native_american.png" },
+  { name: "Ottoman", color: "#556b2f", img: "images/ottoman.png" },
+  { name: "Persian", color: "#c71585", img: "images/persian.png" },
+  { name: "Portuguese", color: "#006400", img: "images/portuguese.png" },
+  { name: "Roman", color: "#800000", img: "images/roman.png" },
+  { name: "Russian", color: "#00008b", img: "images/russian.png" },
+  { name: "Spanish", color: "#ff0000", img: "images/spanish.png" },
+  { name: "Sumerian", color: "#708238", img: "images/sumerian.png" },
+  { name: "Viking", color: "#4682b4", img: "images/viking.png" },
+  { name: "Zulu", color: "#2e8b57", img: "images/zulu.png" }
+];
+
+    // éléments DOM
+    const deckEl = document.getElementById('deck');
+    const resultsEl = document.getElementById('results');
+    const draftBtn = document.getElementById('draftBtn');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    // affiche le deck (ordre actuel)
+	function renderDeck(list = deck){
+  deckEl.innerHTML = '';
+  list.forEach((civ, i) => {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.style.backgroundColor = civ.color; // couleur
+    el.innerHTML = `
+      <img src="${civ.img}" alt="${civ.name}" style="width:24px;height:24px;vertical-align:middle;margin-right:6px;">
+      <strong>${civ.name}</strong>
+    `;
+    deckEl.appendChild(el);
+  });
+}
+
+    renderDeck();
+
+    // Fisher-Yates shuffle (immutably)
+    function shuffleArray(arr){
+      const a = arr.slice();
+      for(let i = a.length - 1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    // Draft n éléments (sans doublons)
+function draft(n = 3){
+  resultsEl.innerHTML = '';
+  if(deck.length === 0){
+    resultsEl.textContent = 'Le deck est vide.';
+    return;
+  }
+  const shuffled = shuffleArray(deck);
+  const pick = shuffled.slice(0, Math.min(n, shuffled.length));
+
+  pick.forEach((civ) => {
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.style.backgroundColor = civ.color;
+    card.innerHTML = `
+      <img src="${civ.img}" alt="${civ.name}" style="width:48px;height:48px;display:block;margin:0 auto 8px;">
+      <h3>${civ.name}</h3>
+    `;
+    resultsEl.appendChild(card);
+  });
+
+  resultsEl.setAttribute('aria-label', `Civilisations tirées : ${pick.map(c=>c.name).join(', ')}`);
+}
+
+    // boutons
+    draftBtn.addEventListener('click', () => draft(3));
+
+    // réaffiche le deck dans un ordre aléatoire (utile pour tester)
+    shuffleBtn.addEventListener('click', () => {
+      const shuffled = shuffleArray(deck);
+      renderDeck(shuffled);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      resultsEl.innerHTML = '';
+      resultsEl.removeAttribute('aria-label');
+    });
+  </script>
+</body>
+</html>
